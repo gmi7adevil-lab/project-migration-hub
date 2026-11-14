@@ -16,7 +16,7 @@ export type { Messages } from "./messages/fr";
 
 export const MESSAGES: Record<Lang, Messages> = { fr, ar, ary, zgh };
 
-interface I18nValue {
+export interface I18nValue {
   lang: Lang;
   dir: Dir;
   t: Messages;
