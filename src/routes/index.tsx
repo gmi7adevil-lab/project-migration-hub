@@ -1,23 +1,43 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-// The home route ships no og:image, so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
+import { Hero } from "@/components/site/Hero";
+import { HOME_ABOUT_ID, HomeAbout } from "@/components/site/HomeAbout";
+import { SiteFooter } from "@/components/site/SiteFooter";
+import { SiteNav } from "@/components/site/SiteNav";
+import { useDocumentTitle, useI18n } from "@/lib/i18n";
+
 export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: "TerraScope — L'intelligence au service de la terre" },
+      {
+        name: "description",
+        content:
+          "Explorez, analysez et comprenez les territoires grâce à une nouvelle approche intelligente de la donnée.",
+      },
+      { property: "og:title", content: "TerraScope — L'intelligence au service de la terre" },
+      {
+        property: "og:description",
+        content: "La terre de demain se choisit avec intelligence aujourd'hui.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+    ],
+  }),
   component: Index,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
 function Index() {
+  const { t } = useI18n();
+  useDocumentTitle(t.meta.home);
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
-    </div>
+    <>
+      <SiteNav />
+      <main>
+        <Hero nextSectionId={HOME_ABOUT_ID} />
+        <HomeAbout />
+      </main>
+      <SiteFooter />
+    </>
   );
 }
