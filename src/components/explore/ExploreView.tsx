@@ -3,6 +3,7 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { SiteNav } from "@/components/site/SiteNav";
+import { useDocumentTitle, useI18n } from "@/lib/i18n";
 import { filterProjects, PROJECTS, type ProjectFilter } from "@/lib/terrascope/projects";
 import type { BoundaryLevel, Profile, TerritorySelection } from "@/lib/terrascope/regions";
 import { EntrepreneurExperience } from "./EntrepreneurExperience";
@@ -19,6 +20,8 @@ const isDesktop = () => typeof window !== "undefined" && window.matchMedia("(min
 
 export function ExploreView() {
   const reduce = useReducedMotion();
+  const { t, project, place, lang } = useI18n();
+  useDocumentTitle(t.meta.explore);
   const rise = (delay: number) =>
     reduce
       ? { initial: false as const }
@@ -36,7 +39,16 @@ export function ExploreView() {
   const mapWrapRef = useRef<HTMLDivElement>(null);
 
   const region = selection?.region;
-  const projects = useMemo(() => filterProjects(PROJECTS, filter, region), [filter, region]);
+  const projects = useMemo(
+    () =>
+      filterProjects(PROJECTS, filter, region, (p) => {
+        const text = project(p);
+        return [text.title, text.categoryLabel, place(p.city), place(p.region), ...p.categories.map((c) => t.projectCategory[c])];
+      }),
+    // `project`, `place` and `t` change with the language
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [filter, region, lang],
+  );
   const mapProjects = profile === "entrepreneur" ? projects : NO_PROJECTS;
 
   const chooseProfile = (p: Profile) => {
@@ -66,17 +78,16 @@ export function ExploreView() {
             className="mb-6 inline-flex items-center gap-3 font-mono text-[11px] tracking-[0.35em] text-primary uppercase sm:text-xs"
           >
             <span className="h-px w-8 bg-primary/50" />
-            Explore
+            {t.explore.eyebrow}
           </motion.p>
           <motion.h1
             {...rise(0.25)}
             className="text-4xl leading-[1.05] font-light tracking-[-0.035em] text-forest sm:text-5xl lg:text-6xl"
           >
-            Explorer les <span className="font-medium text-primary">territoires</span>
+            {t.explore.titleBefore} <span className="font-medium text-primary">{t.explore.titleAccent}</span>
           </motion.h1>
           <motion.p {...rise(0.4)} className="mt-6 max-w-md text-base leading-relaxed text-forest/65 sm:text-lg">
-            Explorez, analysez et comprenez les territoires grâce à une nouvelle approche intelligente de la
-            donnée.
+            {t.explore.intro}
           </motion.p>
         </div>
 
@@ -96,7 +107,7 @@ export function ExploreView() {
         </div>
 
         <div className="flex flex-col gap-8 lg:col-start-1 lg:row-start-2">
-          <ExplorePanel title="Territoire sélectionné">
+          <ExplorePanel title={t.explore.panelTitle}>
             <LocationSummary
               selection={selection}
               onPickRegion={(r) => {
