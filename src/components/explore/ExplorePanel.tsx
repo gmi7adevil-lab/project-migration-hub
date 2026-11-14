@@ -2,6 +2,7 @@ import { useId, useState, type ReactNode } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { ChevronDown } from "lucide-react";
 
+import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
@@ -20,6 +21,7 @@ type ExplorePanelProps = {
 /** Collapsible glass panel that fades and slides up after the map appears. */
 export function ExplorePanel({ title, children, delay = 1.6, defaultOpen = true, className }: ExplorePanelProps) {
   const reduce = useReducedMotion();
+  const { t } = useI18n();
   const [open, setOpen] = useState(defaultOpen);
   const bodyId = useId();
 
@@ -40,7 +42,7 @@ export function ExplorePanel({ title, children, delay = 1.6, defaultOpen = true,
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
           aria-controls={bodyId}
-          aria-label={open ? "Réduire le panneau" : "Ouvrir le panneau"}
+          aria-label={open ? t.explore.collapsePanel : t.explore.expandPanel}
           className="flex size-9 items-center justify-center rounded-full text-forest/60 transition-colors hover:bg-primary/10 hover:text-primary focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:outline-none"
         >
           <ChevronDown className={cn("size-4 transition-transform duration-500", open && "rotate-180")} />

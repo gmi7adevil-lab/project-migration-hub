@@ -1,5 +1,6 @@
 import { Search, X } from "lucide-react";
 
+import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 export type ChipOption<T extends string> = { value: T; label: string; count?: number };
@@ -48,6 +49,7 @@ export function SearchField({
   placeholder: string;
   label: string;
 }) {
+  const { t } = useI18n();
   return (
     <label className="ts-search">
       <Search aria-hidden="true" className="size-4 shrink-0 text-forest/45" />
@@ -63,7 +65,7 @@ export function SearchField({
         <button
           type="button"
           onClick={() => onChange("")}
-          aria-label="Effacer la recherche"
+          aria-label={t.common.clearSearch}
           className="flex size-6 items-center justify-center rounded-full text-forest/50 hover:bg-forest/[0.06] hover:text-forest"
         >
           <X className="size-3.5" />
@@ -86,11 +88,12 @@ export function Notice({ icon, children }: { icon: React.ReactNode; children: Re
 }
 
 export function EmptyResults({ onReset }: { onReset: () => void }) {
+  const { t } = useI18n();
   return (
     <div className="rounded-2xl border border-dashed border-primary/25 p-6 text-center text-sm text-forest/60">
-      Aucun résultat.{" "}
+      {t.common.noResults}{" "}
       <button type="button" onClick={onReset} className="font-semibold text-primary hover:underline">
-        Réinitialiser les filtres
+        {t.common.resetFilters}
       </button>
     </div>
   );
