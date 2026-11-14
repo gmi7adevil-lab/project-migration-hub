@@ -2,15 +2,8 @@ import { useMemo, useState } from "react";
 import { CalendarDays, Droplets, Info, MapPinCheck, Sprout } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import {
-  CROP_CATEGORY_LABEL,
-  CROP_INFO_SOURCE,
-  CROPS,
-  filterCrops,
-  isKnownInRegion,
-  type Crop,
-  type CropCategory,
-} from "@/lib/terrascope/crops";
+import { useI18n } from "@/lib/i18n";
+import { CROPS, filterCrops, isKnownInRegion, type Crop, type CropCategory } from "@/lib/terrascope/crops";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { EmptyResults, FilterChips, Notice, SearchField } from "./controls";
 import { CROP_ICONS } from "./icons";
@@ -18,11 +11,18 @@ import { CROP_ICONS } from "./icons";
 type CategoryFilter = CropCategory | "all";
 
 export function FarmerExperience({ region }: { region?: string | undefined }) {
+  const { t, crop, place, lang } = useI18n();
+  const f = t.farmer;
   const [category, setCategory] = useState<CategoryFilter>("all");
   const [query, setQuery] = useState("");
   const [openId, setOpenId] = useState<string | null>(null);
 
-  const list = useMemo(() => filterCrops(CROPS, { category, query }, region), [category, query, region]);
+  const list = useMemo(
+    () => filterCrops(CROPS, { category, query }, region, (c) => [crop(c).name, t.cropCategory[c.category]]),
+    // `crop` and `t` change with the language
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [category, query, region, lang],
+  );
   const groups = (["cereal", "vegetable"] as const)
     .map((c) => ({ category: c, crops: list.filter((x) => x.category === c) }))
     .filter((g) => g.crops.length > 0);
@@ -32,33 +32,32 @@ export function FarmerExperience({ region }: { region?: string | undefined }) {
   return (
     <section aria-labelledby="farmer-heading" className="space-y-5">
       <div>
-        <p className="ts-eyebrow">Profil agriculteur</p>
+        <p className="ts-eyebrow">{f.eyebrow}</p>
         <h2 id="farmer-heading" className="mt-2 text-2xl font-light tracking-tight text-forest sm:text-3xl">
-          Les cultures adaptées à <span className="font-medium text-primary">votre région</span>
+          {f.titleBefore} <span className="font-medium text-primary">{f.titleAccent}</span>
         </h2>
       </div>
 
       <Notice icon={<Info className="size-4" />}>
-        {CROP_INFO_SOURCE}
+        {f.infoSource}
         {region && knownCount > 0 && (
           <>
             {" "}
-            <strong className="font-semibold text-forest">{knownCount} cultures</strong> sont connues comme
-            produites dans la région {region} ; elles sont listées en premier.
+            <strong className="font-semibold text-forest">{f.knownInRegion(knownCount, place(region))}</strong>
           </>
         )}
       </Notice>
 
       <div className="space-y-3">
-        <SearchField value={query} onChange={setQuery} placeholder="Rechercher une culture…" label="Rechercher une culture" />
+        <SearchField value={query} onChange={setQuery} placeholder={f.search} label={f.searchLabel} />
         <FilterChips<CategoryFilter>
-          label="Filtrer par catégorie"
+          label={t.common.filterByCategory}
           value={category}
           onChange={setCategory}
           options={[
-            { value: "all", label: "Toutes", count: CROPS.length },
-            { value: "cereal", label: "Céréales", count: CROPS.filter((c) => c.category === "cereal").length },
-            { value: "vegetable", label: "Légumes", count: CROPS.filter((c) => c.category === "vegetable").length },
+            { value: "all", label: f.all, count: CROPS.length },
+            { value: "cereal", label: t.cropCategory.cereal, count: CROPS.filter((c) => c.category === "cereal").length },
+            { value: "vegetable", label: t.cropCategory.vegetable, count: CROPS.filter((c) => c.category === "vegetable").length },
           ]}
         />
       </div>
@@ -75,7 +74,7 @@ export function FarmerExperience({ region }: { region?: string | undefined }) {
       {groups.map((g) => (
         <div key={g.category}>
           <h3 className="mb-3 flex items-center gap-3 font-mono text-[11px] tracking-[0.3em] text-forest/50 uppercase">
-            {g.category === "cereal" ? "A · Les céréales" : "B · Les légumes"}
+            {g.category === "cereal" ? f.groupCereals : f.groupVegetables}
             <span className="h-px flex-1 bg-forest/10" />
           </h3>
           <ul className="grid gap-3 sm:grid-cols-2">
@@ -95,30 +94,34 @@ export function FarmerExperience({ region }: { region?: string | undefined }) {
   );
 }
 
-function CropCard({ crop, known, onOpen }: { crop: Crop; known: boolean; onOpen: () => void }) {
-  const Icon = CROP_ICONS[crop.icon];
+function CropCard({ crop: c, known, onOpen }: { crop: Crop; known: boolean; onOpen: () => void }) {
+  const { t, crop, lang } = useI18n();
+  const text = crop(c);
+  const Icon = CROP_ICONS[c.icon];
   return (
-    <button type="button" onClick={onOpen} className="ts-card ts-card-interactive group flex h-full w-full flex-col p-4 text-left">
+    <button type="button" onClick={onOpen} className="ts-card ts-card-interactive group flex h-full w-full flex-col p-4 text-start">
       <div className="flex items-start gap-3">
-        <span className={cn("ts-icon-tile", crop.category === "cereal" && "is-gold")}>
+        <span className={cn("ts-icon-tile", c.category === "cereal" && "is-gold")}>
           <Icon className="size-5" strokeWidth={1.7} />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="font-semibold tracking-tight text-forest">{crop.fr}</p>
-          <p className="text-xs text-forest/50 italic">{crop.en}</p>
+          <p className="font-semibold tracking-tight text-forest">{text.name}</p>
+          {lang === "fr" && <p className="text-xs text-forest/50 italic">{c.en}</p>}
         </div>
-        <span className="ts-tag">{CROP_CATEGORY_LABEL[crop.category]}</span>
+        <span className="ts-tag">{t.cropCategory[c.category]}</span>
       </div>
-      <p className="mt-3 text-sm leading-relaxed text-forest/65">{crop.description}</p>
+      <p className="mt-3 text-sm leading-relaxed text-forest/65">{text.description}</p>
       <div className="mt-auto space-y-1.5 pt-3 text-xs text-forest/60">
         <p className="flex items-center gap-2">
-          <CalendarDays aria-hidden="true" className="size-3.5 text-primary" />
-          <span className="truncate">Semis : {crop.sowing}</span>
+          <CalendarDays aria-hidden="true" className="size-3.5 shrink-0 text-primary" />
+          <span className="truncate">
+            {t.farmer.sowingShort} : {text.sowing}
+          </span>
         </p>
         {known && (
           <p className="flex items-center gap-2 font-semibold text-primary">
-            <MapPinCheck aria-hidden="true" className="size-3.5" />
-            Zone de production connue
+            <MapPinCheck aria-hidden="true" className="size-3.5 shrink-0" />
+            {t.farmer.knownZone}
           </p>
         )}
       </div>
@@ -126,41 +129,43 @@ function CropCard({ crop, known, onOpen }: { crop: Crop; known: boolean; onOpen:
   );
 }
 
-function CropDialog({ crop, region }: { crop: Crop; region?: string | undefined }) {
-  const Icon = CROP_ICONS[crop.icon];
-  const known = isKnownInRegion(crop, region);
+function CropDialog({ crop: c, region }: { crop: Crop; region?: string | undefined }) {
+  const { t, crop, place, lang, dir } = useI18n();
+  const f = t.farmer;
+  const text = crop(c);
+  const Icon = CROP_ICONS[c.icon];
+  const known = isKnownInRegion(c, region);
   return (
-    <DialogContent className="ts-dialog">
-      <DialogHeader className="text-left">
-        <span className={cn("ts-icon-tile size-12", crop.category === "cereal" && "is-gold")}>
+    <DialogContent className="ts-dialog" dir={dir}>
+      <DialogHeader className="text-start">
+        <span className={cn("ts-icon-tile size-12", c.category === "cereal" && "is-gold")}>
           <Icon className="size-6" strokeWidth={1.6} />
         </span>
-        <p className="ts-eyebrow pt-3">{CROP_CATEGORY_LABEL[crop.category]}</p>
-        <DialogTitle className="text-2xl font-medium tracking-tight text-forest">{crop.fr}</DialogTitle>
-        <DialogDescription className="text-forest/55 italic">{crop.en}</DialogDescription>
+        <p className="ts-eyebrow pt-3">{t.cropCategory[c.category]}</p>
+        <DialogTitle className="text-2xl font-medium tracking-tight text-forest">{text.name}</DialogTitle>
+        {lang === "fr" ? (
+          <DialogDescription className="text-forest/55 italic">{c.en}</DialogDescription>
+        ) : (
+          <DialogDescription className="sr-only">{text.description}</DialogDescription>
+        )}
       </DialogHeader>
-      <p className="text-sm leading-relaxed text-forest/75">{crop.description}</p>
+      <p className="text-sm leading-relaxed text-forest/75">{text.description}</p>
       <dl className="grid gap-3 sm:grid-cols-2">
-        <Fact icon={<Sprout className="size-4" />} label="Conduite de la culture" value={crop.growing} wide />
-        <Fact icon={<CalendarDays className="size-4" />} label="Semis / plantation" value={crop.sowing} />
-        <Fact icon={<CalendarDays className="size-4" />} label="Récolte" value={crop.harvest} />
-        <Fact icon={<Droplets className="size-4" />} label="Eau" value={crop.water} wide />
+        <Fact icon={<Sprout className="size-4" />} label={f.growing} value={text.growing} wide />
+        <Fact icon={<CalendarDays className="size-4" />} label={f.sowing} value={text.sowing} />
+        <Fact icon={<CalendarDays className="size-4" />} label={f.harvest} value={text.harvest} />
+        <Fact icon={<Droplets className="size-4" />} label={f.water} value={text.water} wide />
       </dl>
       <div className="rounded-2xl bg-primary/[0.06] p-4 text-sm">
-        <p className="font-semibold text-forest">Principales zones de production connues</p>
-        <p className="mt-1 text-forest/70">{crop.knownRegions.join(" · ")}</p>
+        <p className="font-semibold text-forest">{f.mainZones}</p>
+        <p className="mt-1 text-forest/70">{c.knownRegions.map((r) => place(r)).join(" · ")}</p>
         {region && (
           <p className={cn("mt-2 text-xs", known ? "font-semibold text-primary" : "text-forest/55")}>
-            {known
-              ? `La région ${region} figure parmi ces zones (information indicative).`
-              : `La région ${region} ne figure pas parmi les zones citées — cela ne signifie pas que la culture y est impossible.`}
+            {known ? f.regionListed(place(region)) : f.regionNotListed(place(region))}
           </p>
         )}
       </div>
-      <p className="text-[11px] leading-relaxed text-forest/45">
-        Information générale, non vérifiée à l'échelle de la parcelle. Consultez un conseiller agricole pour une
-        recommandation adaptée à votre sol et à votre accès à l'eau.
-      </p>
+      <p className="text-[11px] leading-relaxed text-forest/45">{f.disclaimer}</p>
     </DialogContent>
   );
 }
