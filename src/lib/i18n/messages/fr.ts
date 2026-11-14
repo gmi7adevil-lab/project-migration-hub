@@ -386,3 +386,5 @@ export const fr = {
     pageFooter: (n: number, total: number) => `${n} / ${total}`,
   },
 };
+
+export type Messages = typeof fr;
