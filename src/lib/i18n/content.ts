@@ -6,6 +6,7 @@ import type { ContentPack, CropText, ProjectText } from "./content/types";
 import { zghContent } from "./content/zgh";
 import type { Lang } from "./languages";
 import { PLACES_AR } from "./places-ar";
+import { PLACES_ZGH } from "./places-zgh";
 
 export const CONTENT_PACKS: Record<Exclude<Lang, "fr">, ContentPack> = {
   ar: arContent,
@@ -30,8 +31,10 @@ export function projectText(lang: Lang, p: Project): ProjectText {
   return lang === "fr" ? frProject(p) : (CONTENT_PACKS[lang].projects[p.id] ?? frProject(p));
 }
 
-/** Region / province / city name in the given language. Arabic-script languages share the official Arabic names. */
+/** Region / province / city name in the given language. Arabic and Darija share the official Arabic names; Amazigh uses Tifinagh. */
 export function placeName(lang: Lang, name: string | undefined): string {
   if (!name) return "";
-  return lang === "fr" ? name : (PLACES_AR[name] ?? name);
+  if (lang === "fr") return name;
+  if (lang === "zgh") return PLACES_ZGH[name] ?? name;
+  return PLACES_AR[name] ?? name;
 }

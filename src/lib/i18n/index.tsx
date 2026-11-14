@@ -5,13 +5,13 @@ import type { Crop } from "@/lib/terrascope/crops";
 import type { Project } from "@/lib/terrascope/projects";
 import { cropText, placeName, projectText } from "./content";
 import type { CropText, ProjectText } from "./content/types";
-import { DEFAULT_LANG, isLang, LANG_INFO, LANG_STORAGE_KEY, type Dir, type Lang } from "./languages";
+import { DEFAULT_LANG, formatDate, isLang, LANG_INFO, LANG_STORAGE_KEY, type Dir, type Lang } from "./languages";
 import { ar } from "./messages/ar";
 import { ary } from "./messages/ary";
 import { fr, type Messages } from "./messages/fr";
 import { zgh } from "./messages/zgh";
 
-export { LANG_INFO, LANGS, type Lang } from "./languages";
+export { formatDate, LANG_INFO, LANGS, type Lang } from "./languages";
 export type { Messages } from "./messages/fr";
 
 export const MESSAGES: Record<Lang, Messages> = { fr, ar, ary, zgh };
@@ -24,6 +24,12 @@ interface I18nValue {
   crop: (c: Crop) => CropText;
   project: (p: Project) => ProjectText;
   place: (name: string | undefined) => string;
+  date: (d: Date) => string;
+}
+
+/** All texts for one language, usable outside React (exports are rendered in their own language). */
+export function textsFor(lang: Lang) {
+  return makeValue(lang, () => {});
 }
 
 function makeValue(lang: Lang, setLang: (l: Lang) => void): I18nValue {
@@ -35,6 +41,7 @@ function makeValue(lang: Lang, setLang: (l: Lang) => void): I18nValue {
     crop: (c) => cropText(lang, c),
     project: (p) => projectText(lang, p),
     place: (n) => placeName(lang, n),
+    date: (d) => formatDate(lang, d),
   };
 }
 
@@ -60,6 +67,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     const info = LANG_INFO[lang];
     document.documentElement.lang = info.htmlLang;
     document.documentElement.dir = info.dir;
+    document.documentElement.dataset.script = info.script;
   }, [lang]);
 
   const setLang = useCallback((next: Lang) => {
