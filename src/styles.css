@@ -793,32 +793,94 @@
 }
 
 /* ---- Language switcher ---- */
-.lang-flag-ring {
-  display: inline-flex;
-  overflow: hidden;
-  border-radius: 3px;
+.lang-trigger {
+  transition:
+    background-color 0.25s,
+    box-shadow 0.25s;
+}
+.lang-trigger:hover {
+  box-shadow: 0 0 0 1px oklch(0.8 0.08 135 / 0.35);
+}
+.lang-flag {
   box-shadow: 0 0 0 1px oklch(0.98 0.01 95 / 0.25);
+}
+.lang-glyph {
+  display: inline-flex;
+  width: 1.25rem;
+  height: 0.875rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+  font-family: "IBM Plex Sans Arabic", var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--forest);
+  background: var(--accent);
+}
+.lang-glyph.is-tifinagh {
+  font-family: "Noto Sans Tifinagh", var(--font-sans);
+  color: var(--ivory);
+  background: var(--primary);
 }
 .lang-menu {
   color: var(--ivory);
-  background: oklch(0.2 0.04 160 / 0.96);
+  background: oklch(0.2 0.04 160 / 0.97);
   border: 1px solid oklch(0.98 0.01 95 / 0.12);
-  box-shadow: 0 30px 60px -24px oklch(0.12 0.03 160 / 0.7);
+  box-shadow: 0 24px 48px -20px oklch(0.12 0.03 160 / 0.7);
   backdrop-filter: blur(16px);
+  transform-origin: var(--radix-dropdown-menu-content-transform-origin);
+}
+.lang-menu[data-state="open"] {
+  animation: lang-menu-in 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.lang-menu[data-state="closed"] {
+  animation: lang-menu-out 0.12s ease-in forwards;
+}
+.lang-menu-label {
+  padding: 0.45rem 0.6rem 0.3rem;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: oklch(0.97 0.012 115 / 0.45);
 }
 .lang-item {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  border-radius: 0.85rem;
-  padding: 0.6rem 0.75rem;
+  gap: 0.6rem;
+  border-radius: 0.6rem;
+  padding: 0.45rem 0.6rem;
   cursor: pointer;
   outline: none;
-  transition: background-color 0.2s;
+  transition: background-color 0.18s;
 }
-.lang-item[data-highlighted],
-.lang-item[data-state="checked"] {
+.lang-item[data-highlighted] {
   background: oklch(0.98 0.01 95 / 0.08);
+}
+.lang-item[data-state="checked"] {
+  background: oklch(0.8 0.08 135 / 0.12);
+}
+.lang-item-hint {
+  font-size: 10px;
+  color: oklch(0.97 0.012 115 / 0.45);
+}
+@keyframes lang-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+@keyframes lang-menu-out {
+  to {
+    opacity: 0;
+    transform: translateY(-3px) scale(0.98);
+  }
 }
 
 /* ---- Home "À propos" section ---- */
@@ -831,14 +893,45 @@
     radial-gradient(ellipse 40% 40% at 10% 90%, oklch(0.78 0.13 82 / 0.08), transparent 70%);
 }
 
-/* ---- Right-to-left languages ---- */
-[dir="rtl"] body {
+/* ---- Right-to-left languages & scripts ---- */
+[data-script="arabic"] body {
   font-family: "IBM Plex Sans Arabic", var(--font-sans);
 }
-/* Letter-spacing breaks Arabic letter joining; italics don't exist in Arabic script. */
-[dir="rtl"] * {
+[data-script="tifinagh"] body {
+  font-family: "Noto Sans Tifinagh", var(--font-sans);
+}
+/* Letter-spacing breaks Arabic letter joining and crowds Tifinagh; italics don't exist in either script. */
+[data-script="arabic"] *,
+[data-script="tifinagh"] * {
   letter-spacing: normal !important;
 }
-[dir="rtl"] .italic {
+[data-script="arabic"] .italic,
+[data-script="tifinagh"] .italic {
   font-style: normal;
+}
+/* Arabic glyphs need more line height than Latin text at the same size. */
+[data-script="arabic"] h1,
+[data-script="arabic"] h2 {
+  line-height: 1.3;
+}
+[dir="rtl"] .profile-card,
+[dir="rtl"] .ts-card-interactive {
+  text-align: right;
+}
+[dir="rtl"] .leaflet-container .ts-popup-title {
+  margin: 0.4rem 0 0 1.25rem;
+}
+[dir="rtl"] .ts-popup a.leaflet-popup-close-button {
+  right: auto;
+  left: 10px;
+}
+[dir="rtl"] .ts-popup-body,
+[dir="rtl"] .leaflet-tooltip.ts-tooltip {
+  direction: rtl;
+  text-align: right;
+  font-family: "IBM Plex Sans Arabic", var(--font-sans);
+}
+[data-script="tifinagh"] .ts-popup-body,
+[data-script="tifinagh"] .leaflet-tooltip.ts-tooltip {
+  font-family: "Noto Sans Tifinagh", var(--font-sans);
 }
