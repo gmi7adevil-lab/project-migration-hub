@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import type * as Leaflet from "leaflet";
-import { Layers, MapPin } from "lucide-react";
+import { Layers, MapPin, Sprout } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { useI18n, type I18nValue } from "@/lib/i18n";
+import { CROP_CLASS_BREAKS, CROP_COUNT_BY_REGION, cropClass, primaryCategory } from "@/lib/terrascope/mapStats";
 import { loadBoundaries, locateAdmin, MOROCCO_BOUNDS } from "@/lib/terrascope/morocco";
-import { PROJECT_STATUS, type Project } from "@/lib/terrascope/projects";
-import { selectionLabel, type BoundaryLevel, type TerritorySelection } from "@/lib/terrascope/regions";
+import type { Project } from "@/lib/terrascope/projects";
+import type { BoundaryLevel, TerritorySelection } from "@/lib/terrascope/regions";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -28,20 +30,21 @@ export type ExploreMapProps = {
 const esc = (s: string) =>
   s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 
-function popupHtml(p: Project) {
-  return `<div class="ts-popup-body">
-    <p class="ts-popup-eyebrow">${esc(p.categoryLabel)}</p>
-    <h3 class="ts-popup-title">${esc(p.title)}</h3>
-    <p class="ts-popup-text">${esc(p.description)}</p>
-    <p class="ts-popup-meta"><span>Localisation suggérée</span>${esc(p.city)} · ${esc(p.region)}</p>
-    <p class="ts-popup-status">${esc(PROJECT_STATUS)}</p>
+function popupHtml(p: Project, i18n: I18nValue) {
+  const text = i18n.project(p);
+  return `<div class="ts-popup-body" dir="${i18n.dir}">
+    <p class="ts-popup-eyebrow">${esc(text.categoryLabel)}</p>
+    <h3 class="ts-popup-title">${esc(text.title)}</h3>
+    <p class="ts-popup-text">${esc(text.description)}</p>
+    <p class="ts-popup-meta"><span>${esc(i18n.t.map.suggestedLocation)}</span>${esc(i18n.place(p.city))} · ${esc(i18n.place(p.region))}</p>
+    <p class="ts-popup-status">${esc(i18n.t.projectStatus)}</p>
   </div>`;
 }
 
 function markerIcon(L: LeafletNS, p: Project, active: boolean) {
   return L.divIcon({
     className: "ts-marker-wrap",
-    html: `<span class="ts-marker${active ? " is-active" : ""}"><span>${p.number}</span></span>`,
+    html: `<span class="ts-marker${active ? " is-active" : ""}" data-cat="${primaryCategory(p)}"><span>${p.number}</span></span>`,
     iconSize: [34, 34],
     iconAnchor: [17, 17],
     popupAnchor: [0, -18],
@@ -65,6 +68,11 @@ export function ExploreMap({
   onProjectSelect,
 }: ExploreMapProps) {
   const reduce = useReducedMotion();
+  const i18n = useI18n();
+  const { t, place } = i18n;
+  const i18nRef = useRef(i18n);
+  i18nRef.current = i18n;
+  const [showCrops, setShowCrops] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<Leaflet.Map | null>(null);
   const LRef = useRef<LeafletNS | null>(null);
@@ -109,10 +117,9 @@ export function ExploreMap({
 
       L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
         maxZoom: 19,
-        attribution:
-          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> · Limites : geoBoundaries',
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
       }).addTo(map);
-      L.control.zoom({ position: "bottomright", zoomInTitle: "Zoom avant", zoomOutTitle: "Zoom arrière" }).addTo(map);
+      L.control.zoom({ position: "bottomright" }).addTo(map);
 
       loadBoundaries("country")
         .then((country) => {
@@ -163,7 +170,7 @@ export function ExploreMap({
           const name = (feature.properties as { name: string }).name;
           const path = l as Leaflet.Polygon;
           boundaryLayers.current.set(name, path);
-          path.bindTooltip(name, { sticky: true, direction: "top", className: "ts-tooltip", offset: [0, -8] });
+          path.bindTooltip(i18nRef.current.place(name), { sticky: true, direction: "top", className: "ts-tooltip", offset: [0, -8] });
           path.on("mouseover", () => path.getElement()?.classList.add("is-hover"));
           path.on("mouseout", () => path.getElement()?.classList.remove("is-hover"));
           path.on("click", async (e: Leaflet.LeafletMouseEvent) => {
@@ -186,6 +193,37 @@ export function ExploreMap({
       boundaryLayers.current.clear();
     };
   }, [ready, level]);
+
+  // ---- Language: tooltips, zoom buttons, attribution ----
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!ready || !map) return;
+    boundaryLayers.current.forEach((l, name) => l.setTooltipContent(place(name)));
+    const zoom = map.getContainer().querySelector(".leaflet-control-zoom");
+    for (const [sel, label] of [
+      [".leaflet-control-zoom-in", t.map.zoomIn],
+      [".leaflet-control-zoom-out", t.map.zoomOut],
+    ] as const) {
+      const a = zoom?.querySelector(sel);
+      a?.setAttribute("title", label);
+      a?.setAttribute("aria-label", label);
+    }
+    map.attributionControl.addAttribution(t.map.attribution);
+    return () => {
+      map.attributionControl.removeAttribution(t.map.attribution);
+    };
+  }, [ready, boundaryVersion, place, t]);
+
+  // ---- Crop-presence layer (regions only) ----
+  useEffect(() => {
+    if (!ready) return;
+    boundaryLayers.current.forEach((l, name) => {
+      const el = l.getElement();
+      if (!el) return;
+      for (let c = 0; c <= 5; c++) el.classList.remove(`ts-crop-${c}`);
+      if (showCrops && level === "regions") el.classList.add(`ts-crop-${cropClass(CROP_COUNT_BY_REGION[name] ?? 0)}`);
+    });
+  }, [ready, showCrops, level, boundaryVersion]);
 
   // ---- Highlight + frame the selection ----
   const selectedName = selection ? (level === "regions" ? selection.region : selection.province) : undefined;
@@ -229,7 +267,7 @@ export function ExploreMap({
         riseOnHover: true,
         keyboard: true,
       })
-        .bindPopup(popupHtml(p), { className: "ts-popup", maxWidth: 280, minWidth: 220, autoPanPaddingTopLeft: [24, 72], autoPanPaddingBottomRight: [24, 24] })
+        .bindPopup(popupHtml(p, i18nRef.current), { className: "ts-popup", maxWidth: 280, minWidth: 220, autoPanPaddingTopLeft: [24, 72], autoPanPaddingBottomRight: [24, 24] })
         .on("click", () => onProjectRef.current(p.id))
         .addTo(group);
       markers.current.set(p.id, m);
@@ -238,7 +276,7 @@ export function ExploreMap({
       group.remove();
       markers.current.clear();
     };
-  }, [ready, projects]);
+  }, [ready, projects, i18n.lang]);
 
   // ---- Active project: restyle marker, fly to it, open its popup ----
   useEffect(() => {
@@ -264,7 +302,11 @@ export function ExploreMap({
       map.off("moveend", open);
       m.setZIndexOffset(0);
     };
-  }, [ready, activeProjectId, projects, reduce]);
+  }, [ready, activeProjectId, projects, reduce, i18n.lang]);
+
+  const selectionName = selection ? place(selection.level === "province" ? selection.province : selection.region) : "";
+  const legendCategories = [...new Set(projects.map(primaryCategory))];
+  const cropLegend = showCrops && level === "regions";
 
   return (
     <motion.div
@@ -276,7 +318,7 @@ export function ExploreMap({
       <div
         ref={containerRef}
         className="explore-map absolute inset-0"
-        aria-label="Carte interactive du Maroc"
+        aria-label={t.map.aria}
         role="region"
       />
 
@@ -304,10 +346,9 @@ export function ExploreMap({
         initial={reduce ? false : { opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, delay: delay + 1, ease: EASE }}
-        className="map-overlay absolute top-4 left-4 z-[600] flex items-center gap-1 rounded-full p-1"
-        role="group"
-        aria-label="Niveau de découpage"
+        className="absolute start-4 top-4 z-[600] flex flex-wrap items-center gap-2"
       >
+        <div className="map-overlay flex items-center gap-1 rounded-full p-1" role="group" aria-label={t.map.levelGroup}>
         <Layers aria-hidden="true" className="mx-2 size-4 text-forest/50" />
         {(["regions", "provinces"] as const).map((l) => (
           <button
@@ -320,17 +361,77 @@ export function ExploreMap({
               level === l ? "bg-primary text-primary-foreground" : "text-forest/65 hover:bg-forest/[0.06] hover:text-forest",
             )}
           >
-            {l === "regions" ? "Régions" : "Provinces"}
+            {l === "regions" ? t.map.regions : t.map.provinces}
           </button>
         ))}
+        </div>
+        {level === "regions" && (
+          <button
+            type="button"
+            onClick={() => setShowCrops((v) => !v)}
+            aria-pressed={showCrops}
+            className={cn("map-overlay map-toggle", showCrops && "is-on")}
+          >
+            <Sprout aria-hidden="true" className="size-3.5" />
+            {t.map.cropLayer}
+          </button>
+        )}
       </motion.div>
+
+      {/* Legend — only lists what is actually drawn */}
+      {(selection || cropLegend || legendCategories.length > 0) && (
+        <div className="map-overlay map-legend absolute end-4 top-4 z-[600] hidden w-52 rounded-2xl p-3 sm:block" aria-label={t.map.legend}>
+          <p className="map-legend-title">{t.map.legend}</p>
+          <ul className="mt-2 space-y-1.5">
+            {selection && (
+              <li className="map-legend-row">
+                <span className="map-swatch is-select" />
+                {t.map.legendSelected}
+              </li>
+            )}
+            <li className="map-legend-row">
+              <span className="map-swatch is-line" />
+              {t.map.legendBoundary}
+            </li>
+          </ul>
+          {cropLegend && (
+            <div className="mt-3">
+              <p className="map-legend-sub">{t.map.cropsScaleTitle}</p>
+              <div className="mt-1.5 flex gap-0.5" dir="ltr">
+                {[0, ...CROP_CLASS_BREAKS.map((b) => b.cls)].map((c) => (
+                  <span key={c} className={cn("map-ramp", `is-c${c}`)} />
+                ))}
+              </div>
+              <div className="mt-1 flex justify-between text-[10px] text-forest/55" dir="ltr">
+                <span>0</span>
+                {CROP_CLASS_BREAKS.map((b) => (
+                  <span key={b.cls}>{b.min === b.max ? b.min : `${b.min}+`}</span>
+                ))}
+              </div>
+            </div>
+          )}
+          {legendCategories.length > 0 && (
+            <div className="mt-3">
+              <p className="map-legend-sub">{t.map.legendProjects}</p>
+              <ul className="mt-1.5 space-y-1">
+                {legendCategories.map((c) => (
+                  <li key={c} className="map-legend-row">
+                    <span className="map-dot" data-cat={c} />
+                    {t.projectCategory[c]}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Selected territory / hint */}
       <motion.div
         initial={reduce ? false : { opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, delay: delay + 1.2, ease: EASE }}
-        className="map-overlay pointer-events-none absolute bottom-4 left-4 z-[600] flex max-w-[calc(100%-6rem)] items-center gap-2.5 rounded-full py-2 pr-4 pl-2.5"
+        className="map-overlay pointer-events-none absolute start-4 bottom-4 z-[600] flex max-w-[calc(100%-6rem)] items-center gap-2.5 rounded-full py-2 ps-2.5 pe-4"
         aria-live="polite"
       >
         <span
@@ -343,10 +444,10 @@ export function ExploreMap({
         </span>
         <span className="truncate text-xs font-semibold text-forest">
           {selection
-            ? selectionLabel(selection)
+            ? selectionName || t.location.selectedFallback
             : level === "regions"
-              ? "Cliquez sur une région"
-              : "Cliquez sur une province"}
+              ? t.map.clickRegion
+              : t.map.clickProvince}
         </span>
       </motion.div>
 
