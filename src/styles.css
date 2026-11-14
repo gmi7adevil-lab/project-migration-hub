@@ -120,6 +120,71 @@
   --shadow-glow: 0 10px 40px -10px oklch(0.64 0.12 143 / 0.65), 0 0 0 1px oklch(0.8 0.08 135 / 0.25) inset;
   --shadow-glow-strong: 0 18px 60px -12px oklch(0.7 0.13 143 / 0.8), 0 0 0 1px oklch(0.8 0.08 135 / 0.45) inset;
   --shadow-text: 0 2px 30px oklch(0.16 0.035 160 / 0.45);
+
+  /*
+   * Geographic colour system — shared by the live map (CSS classes) and exported maps (read by canvas).
+   * Meaning: greens = known agricultural presence (darker = more crops), soft grey = no recorded data,
+   * gold = selected territory, category hues for project concepts (water = blue, energy = amber…).
+   * Three palettes: natural (default), hc = high contrast, pr = print.
+   */
+  --map-bg: oklch(0.975 0.008 200);
+  --map-land: oklch(0.965 0.01 110);
+  --map-land-muted: oklch(0.94 0.006 110);
+  --map-neutral: oklch(0.91 0.006 100);
+  --map-crop-1: oklch(0.93 0.055 128);
+  --map-crop-2: oklch(0.86 0.095 134);
+  --map-crop-3: oklch(0.76 0.125 140);
+  --map-crop-4: oklch(0.64 0.135 146);
+  --map-crop-5: oklch(0.5 0.115 152);
+  --map-boundary: oklch(0.36 0.045 160);
+  --map-province: oklch(0.45 0.03 160 / 0.45);
+  --map-country: oklch(0.24 0.045 160);
+  --map-select: oklch(0.72 0.15 72);
+  --map-label: oklch(0.24 0.045 160);
+  --map-halo: oklch(1 0 0);
+  --map-graticule: oklch(0.55 0.04 220 / 0.22);
+  --map-cat-health: oklch(0.58 0.18 25);
+  --map-cat-agriculture: oklch(0.55 0.13 145);
+  --map-cat-energy: oklch(0.74 0.15 75);
+  --map-cat-education: oklch(0.56 0.09 205);
+  --map-cat-water: oklch(0.56 0.14 245);
+  --map-cat-tourism: oklch(0.63 0.13 48);
+  --map-cat-logistics: oklch(0.47 0.03 255);
+  --map-cat-environment: oklch(0.62 0.12 118);
+
+  --map-hc-bg: oklch(1 0 0);
+  --map-hc-land: oklch(0.985 0 0);
+  --map-hc-land-muted: oklch(0.95 0 0);
+  --map-hc-neutral: oklch(0.88 0 0);
+  --map-hc-crop-1: oklch(0.9 0.09 125);
+  --map-hc-crop-2: oklch(0.8 0.14 132);
+  --map-hc-crop-3: oklch(0.66 0.17 140);
+  --map-hc-crop-4: oklch(0.52 0.16 148);
+  --map-hc-crop-5: oklch(0.38 0.12 155);
+  --map-hc-boundary: oklch(0.15 0.02 160);
+  --map-hc-province: oklch(0.2 0.02 160 / 0.6);
+  --map-hc-country: oklch(0.1 0.02 160);
+  --map-hc-select: oklch(0.68 0.19 60);
+  --map-hc-label: oklch(0.12 0.02 160);
+  --map-hc-halo: oklch(1 0 0);
+  --map-hc-graticule: oklch(0.35 0.05 230 / 0.3);
+
+  --map-pr-bg: oklch(1 0 0);
+  --map-pr-land: oklch(0.99 0 0);
+  --map-pr-land-muted: oklch(0.96 0 0);
+  --map-pr-neutral: oklch(0.93 0 0);
+  --map-pr-crop-1: oklch(0.95 0.025 130);
+  --map-pr-crop-2: oklch(0.89 0.045 135);
+  --map-pr-crop-3: oklch(0.8 0.06 140);
+  --map-pr-crop-4: oklch(0.69 0.07 145);
+  --map-pr-crop-5: oklch(0.57 0.07 150);
+  --map-pr-boundary: oklch(0.35 0.01 160);
+  --map-pr-province: oklch(0.45 0.01 160 / 0.5);
+  --map-pr-country: oklch(0.2 0.01 160);
+  --map-pr-select: oklch(0.62 0.12 72);
+  --map-pr-label: oklch(0.2 0.01 160);
+  --map-pr-halo: oklch(1 0 0);
+  --map-pr-graticule: oklch(0.5 0 0 / 0.18);
 }
 
 @layer base {
@@ -363,7 +428,7 @@
     gap: 0.6rem;
     height: 2.75rem;
     border-radius: 9999px;
-    padding: 0 0.9rem 0 1rem;
+    padding-inline: 1rem 0.9rem;
     background: var(--paper);
     border: 1px solid oklch(0.22 0.045 160 / 0.12);
     transition:
@@ -395,7 +460,7 @@
     position: relative;
     display: block;
     width: 100%;
-    text-align: left;
+    text-align: start;
     border-radius: 1.5rem;
     padding: 1.5rem;
     background: var(--paper);
@@ -448,7 +513,7 @@
   .profile-card-check {
     position: absolute;
     top: 1.25rem;
-    right: 1.25rem;
+    inset-inline-end: 1.25rem;
     display: flex;
     width: 1.5rem;
     height: 1.5rem;
@@ -650,16 +715,43 @@
   cursor: pointer;
   transition: fill-opacity 0.25s, stroke-opacity 0.25s;
 }
+.explore-map .ts-boundary.ts-crop-0 {
+  fill: var(--map-neutral);
+  fill-opacity: 0.55;
+}
+.explore-map .ts-boundary.ts-crop-1 {
+  fill: var(--map-crop-1);
+  fill-opacity: 0.72;
+}
+.explore-map .ts-boundary.ts-crop-2 {
+  fill: var(--map-crop-2);
+  fill-opacity: 0.72;
+}
+.explore-map .ts-boundary.ts-crop-3 {
+  fill: var(--map-crop-3);
+  fill-opacity: 0.72;
+}
+.explore-map .ts-boundary.ts-crop-4 {
+  fill: var(--map-crop-4);
+  fill-opacity: 0.72;
+}
+.explore-map .ts-boundary.ts-crop-5 {
+  fill: var(--map-crop-5);
+  fill-opacity: 0.72;
+}
 .explore-map .ts-boundary.is-hover {
   fill-opacity: 0.16;
   stroke-opacity: 0.6;
 }
 .explore-map .ts-boundary.is-selected {
-  fill: var(--primary);
-  fill-opacity: 0.26;
-  stroke: var(--primary);
+  fill: var(--map-select);
+  fill-opacity: 0.22;
+  stroke: var(--map-select);
   stroke-opacity: 1;
-  stroke-width: 2.5px;
+  stroke-width: 3px;
+}
+.explore-map .ts-boundary[class*="ts-crop-"].is-selected {
+  fill-opacity: 0.8;
 }
 .explore-map .leaflet-interactive:focus {
   outline: none;
@@ -702,10 +794,19 @@
   font-weight: 500;
   color: var(--ivory);
 }
+.ts-marker[data-cat="health"] { background: var(--map-cat-health); }
+.ts-marker[data-cat="agriculture"] { background: var(--map-cat-agriculture); }
+.ts-marker[data-cat="energy"] { background: var(--map-cat-energy); }
+.ts-marker[data-cat="education"] { background: var(--map-cat-education); }
+.ts-marker[data-cat="water"] { background: var(--map-cat-water); }
+.ts-marker[data-cat="tourism"] { background: var(--map-cat-tourism); }
+.ts-marker[data-cat="logistics"] { background: var(--map-cat-logistics); }
+.ts-marker[data-cat="environment"] { background: var(--map-cat-environment); }
 .ts-marker-wrap:hover .ts-marker {
   transform: rotate(-45deg) scale(1.12);
 }
-.ts-marker.is-active {
+.ts-marker.is-active,
+.ts-marker.is-active[data-cat] {
   background: var(--forest);
   transform: rotate(-45deg) scale(1.25);
   box-shadow:
@@ -913,10 +1014,6 @@
 [data-script="arabic"] h1,
 [data-script="arabic"] h2 {
   line-height: 1.3;
-}
-[dir="rtl"] .profile-card,
-[dir="rtl"] .ts-card-interactive {
-  text-align: right;
 }
 [dir="rtl"] .leaflet-container .ts-popup-title {
   margin: 0.4rem 0 0 1.25rem;
