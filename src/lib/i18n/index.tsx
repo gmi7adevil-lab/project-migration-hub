@@ -67,7 +67,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     const info = LANG_INFO[lang];
     document.documentElement.lang = info.htmlLang;
     document.documentElement.dir = info.dir;
-    document.documentElement.dataset.script = info.script;
+    document.documentElement.dataset["script"] = info.script;
   }, [lang]);
 
   const setLang = useCallback((next: Lang) => {
