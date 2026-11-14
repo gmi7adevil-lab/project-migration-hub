@@ -18,34 +18,22 @@ import { Button } from "@/components/ui/button";
 import { ExploreLink } from "@/components/site/ExploreLink";
 import { SiteFooter } from "@/components/site/SiteFooter";
 import { SiteNav } from "@/components/site/SiteNav";
+import { useDocumentTitle, useI18n } from "@/lib/i18n";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
-const PILLARS: { icon: LucideIcon; eyebrow: string; title: string; text: string }[] = [
-  {
-    icon: Eye,
-    eyebrow: "01",
-    title: "Notre Vision",
-    text: "Nous croyons que les décisions d'aujourd'hui façonnent les territoires de demain. Notre ambition est de rendre les données géographiques plus accessibles et plus utiles pour les agriculteurs, les entrepreneurs et les acteurs du développement territorial.",
-  },
-  {
-    icon: Target,
-    eyebrow: "02",
-    title: "Notre Mission",
-    text: "Notre mission est de connecter l'information géographique aux opportunités réelles du terrain, afin d'aider les utilisateurs à mieux comprendre les territoires et à identifier des possibilités de développement.",
-  },
-];
-
-const GOALS: { icon: LucideIcon; text: string }[] = [
-  { icon: MapIcon, text: "Faciliter l'exploration géographique du Maroc." },
-  { icon: Sprout, text: "Valoriser les opportunités agricoles." },
-  { icon: TrendingUp, text: "Identifier des possibilités de développement territorial." },
-  { icon: Lightbulb, text: "Aider les entrepreneurs à explorer de nouvelles idées de projets." },
-  { icon: Waypoints, text: "Encourager une utilisation intelligente des données géographiques." },
-];
+const PILLAR_ICONS: LucideIcon[] = [Eye, Target];
+const GOAL_ICONS: LucideIcon[] = [MapIcon, Sprout, TrendingUp, Lightbulb, Waypoints];
 
 export function AboutView() {
   const reduce = useReducedMotion();
+  const { t } = useI18n();
+  const a = t.about;
+  useDocumentTitle(t.meta.about);
+  const pillars = [
+    { eyebrow: "01", title: a.visionTitle, text: a.visionText },
+    { eyebrow: "02", title: a.missionTitle, text: a.missionText },
+  ];
   const reveal = (i = 0) =>
     reduce
       ? { initial: false as const }
@@ -74,14 +62,14 @@ export function AboutView() {
             className="mx-auto w-full max-w-7xl"
           >
             <p className="mb-6 inline-flex items-center gap-3 font-mono text-[11px] tracking-[0.35em] text-accent uppercase sm:text-xs">
-              <span className="h-px w-8 bg-accent/60" />À propos
+              <span className="h-px w-8 bg-accent/60" />
+              {a.eyebrow}
             </p>
             <h1 className="text-glow max-w-3xl text-4xl leading-[1.05] font-light tracking-[-0.035em] text-ivory sm:text-6xl">
-              À propos de <span className="font-medium text-accent">TerraScope</span>
+              {a.titleBefore} <span className="font-medium text-accent">TerraScope</span>
             </h1>
             <p className="text-glow mt-6 max-w-xl text-base leading-relaxed text-ivory/85 sm:text-lg">
-              TerraScope est une plateforme intelligente dédiée à l'exploration, à l'analyse et à la valorisation
-              des territoires.
+              {a.intro}
             </p>
           </motion.div>
         </section>
@@ -89,18 +77,21 @@ export function AboutView() {
         <div className="bg-paper text-forest">
           {/* Vision & Mission */}
           <section className="mx-auto grid max-w-7xl gap-5 px-6 py-20 sm:px-8 md:grid-cols-2 lg:py-28">
-            {PILLARS.map((p, i) => (
-              <motion.article key={p.title} {...reveal(i)} className="ts-card ts-card-lift p-8 sm:p-10">
+            {pillars.map((p, i) => {
+              const Icon = PILLAR_ICONS[i]!;
+              return (
+              <motion.article key={p.eyebrow} {...reveal(i)} className="ts-card ts-card-lift p-8 sm:p-10">
                 <div className="flex items-center justify-between">
                   <span className="ts-icon-tile size-12">
-                    <p.icon className="size-6" strokeWidth={1.6} />
+                    <Icon className="size-6" strokeWidth={1.6} />
                   </span>
                   <span className="font-mono text-xs text-forest/30">{p.eyebrow}</span>
                 </div>
                 <h2 className="mt-8 text-2xl font-medium tracking-tight">{p.title}</h2>
                 <p className="mt-4 leading-relaxed text-forest/65">{p.text}</p>
               </motion.article>
-            ))}
+              );
+            })}
           </section>
 
           {/* Objectifs */}
@@ -110,19 +101,22 @@ export function AboutView() {
                 <div>
                   <p className="ts-eyebrow">03</p>
                   <h2 className="mt-3 text-3xl font-light tracking-tight sm:text-4xl">
-                    Nos <span className="font-medium text-primary">Objectifs</span>
+                    {a.goalsBefore} <span className="font-medium text-primary">{a.goalsAccent}</span>
                   </h2>
                 </div>
               </motion.div>
               <ul className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-                {GOALS.map((g, i) => (
-                  <motion.li key={g.text} {...reveal(i)} className="ts-card ts-card-lift flex flex-col gap-5 p-5">
-                    <span className="ts-icon-tile">
-                      <g.icon className="size-5" strokeWidth={1.7} />
-                    </span>
-                    <p className="text-sm leading-relaxed font-medium text-forest/80">{g.text}</p>
-                  </motion.li>
-                ))}
+                {a.goals.map((text, i) => {
+                  const Icon = GOAL_ICONS[i] ?? MapIcon;
+                  return (
+                    <motion.li key={i} {...reveal(i)} className="ts-card ts-card-lift flex flex-col gap-5 p-5">
+                      <span className="ts-icon-tile">
+                        <Icon className="size-5" strokeWidth={1.7} />
+                      </span>
+                      <p className="text-sm leading-relaxed font-medium text-forest/80">{text}</p>
+                    </motion.li>
+                  );
+                })}
               </ul>
             </div>
           </section>
@@ -136,21 +130,20 @@ export function AboutView() {
               <img src={emblem.url} alt="" aria-hidden="true" width={520} height={445} className="w-28 sm:w-36" loading="lazy" />
               <div>
                 <p className="inline-flex items-center gap-2 font-mono text-[11px] tracking-[0.3em] text-accent uppercase">
-                  <Compass className="size-3.5" /> 04 · Notre Approche
+                  <Compass className="size-3.5" /> {a.approachLabel}
                 </p>
                 <p className="mt-5 max-w-2xl text-xl leading-relaxed font-light sm:text-2xl">
-                  Grâce à une interface interactive et une approche centrée sur la donnée géographique, TerraScope
-                  propose une nouvelle manière de découvrir et de comprendre les territoires.
+                  {a.approachText}
                 </p>
                 <Button asChild variant="hero" size="xl" className="mt-9">
                   <ExploreLink>
                     <span
                       aria-hidden="true"
-                      className="pointer-events-none absolute inset-y-0 left-0 w-1/3 -translate-x-[120%] bg-ivory/25 blur-md group-hover:animate-shimmer"
+                      className="pointer-events-none absolute inset-y-0 start-0 w-1/3 -translate-x-[120%] bg-ivory/25 blur-md group-hover:animate-shimmer"
                     />
-                    <span className="relative">Explorer la carte</span>
-                    <span className="relative flex size-7 items-center justify-center rounded-full bg-ivory/15 transition-transform duration-500 ease-out group-hover:translate-x-1">
-                      <ArrowRight className="transition-transform duration-500 group-hover:-rotate-45" />
+                    <span className="relative">{a.cta}</span>
+                    <span className="relative flex size-7 items-center justify-center rounded-full bg-ivory/15 transition-transform duration-500 ease-out group-hover:translate-x-1 rtl:group-hover:-translate-x-1">
+                      <ArrowRight className="transition-transform duration-500 group-hover:-rotate-45 rtl:-scale-x-100 rtl:group-hover:rotate-45" />
                     </span>
                   </ExploreLink>
                 </Button>

@@ -155,7 +155,7 @@ export function Hero({ nextSectionId }: { nextSectionId?: string }) {
             <ExploreLink>
               <span
                 aria-hidden="true"
-                className="pointer-events-none absolute inset-y-0 left-0 w-1/3 -translate-x-[120%] bg-ivory/25 blur-md group-hover:animate-shimmer"
+                className="pointer-events-none absolute inset-y-0 start-0 w-1/3 -translate-x-[120%] bg-ivory/25 blur-md group-hover:animate-shimmer"
               />
               <span className="relative">{t.hero.cta}</span>
               <span className="relative flex size-7 items-center justify-center rounded-full bg-ivory/15 transition-transform duration-500 ease-out group-hover:translate-x-1 rtl:group-hover:-translate-x-1">
