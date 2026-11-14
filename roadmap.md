@@ -1,8 +1,10 @@
-# Roadmap — brief "Amélioration du site web"
+# Roadmap — TerraScope multilingual & export brief
 
-- [ ] 1. Language switcher (FR default, العربية, الدارجة, تامازيغت in Arabic script), RTL for ar/ary/zgh, persisted, instant
-- [ ] 2. Home: "À propos" section revealed on scroll (no Export on scroll)
-- [ ] 3. Export: real export (CSV / JSON / GeoJSON / PDF) opened only by the Export button, premium immersive overlay
-- [ ] 4. Home "À propos" content: vision, mission, problem, value of geospatial analysis
-- [ ] 5. Remove "Observe · Analyze · Act" from the home page
-- [ ] 6. QA: responsive, RTL layout, tests, no console errors
+- [x] 0. Import uploaded project into Lovable
+- [ ] 1. Translate every screen (Explore, map, About, dialogs, data labels) via the central dictionaries
+- [ ] 2. Amazigh in Tifinagh (LTR, Tifinagh font), place names included
+- [ ] 3. Compact language selector with tiny browser-window icon
+- [ ] 4. RTL-safe layout (logical spacing, arrows, overlays) for ar / ary
+- [ ] 5. Export page (/export): configurator, live preview, PDF / PNG / map PNG / CSV / Excel / GeoJSON / JSON, language-aware
+- [ ] 6. Map colour system (meaningful palettes + legends) for the live map and exported maps
+- [ ] 7. Tests (dictionary parity, exporters) + browser QA in all 4 languages
