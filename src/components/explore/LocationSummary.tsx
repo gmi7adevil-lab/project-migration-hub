@@ -1,5 +1,4 @@
-import { Link } from "@tanstack/react-router";
-import { ChevronDown, FileDown, Layers, MapPin, RotateCcw } from "lucide-react";
+import { ChevronDown, Layers, MapPin, RotateCcw } from "lucide-react";
 
 import { useI18n } from "@/lib/i18n";
 import { CROPS, isKnownInRegion } from "@/lib/terrascope/crops";
@@ -80,15 +79,6 @@ export function LocationSummary({ selection, onPickRegion, onReset }: Props) {
           </button>
         )}
       </div>
-
-      <Link
-        to="/export"
-        search={{ region: region ?? undefined, province: selection?.level === "province" ? selection.province : undefined }}
-        className="export-cta"
-      >
-        <FileDown aria-hidden="true" className="size-4" />
-        {selection ? l.exportSelection : l.exportAll}
-      </Link>
 
       <p className="text-[11px] leading-relaxed text-forest/40">
         {l.boundaries} : {BOUNDARY_SOURCE.source} · {l.boundaryResolution}
