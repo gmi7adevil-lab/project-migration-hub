@@ -283,8 +283,16 @@ export interface ProjectFilter {
   query: string;
 }
 
-/** Filters by category and search (name, category, city, region); projects in `region` come first. */
-export function filterProjects(projects: Project[], { category, query }: ProjectFilter, region?: string) {
+/**
+ * Filters by category and search (name, category, city, region); projects in `region` come first.
+ * `localized` adds the same fields in the interface language so search works in every language.
+ */
+export function filterProjects(
+  projects: Project[],
+  { category, query }: ProjectFilter,
+  region?: string,
+  localized?: (p: Project) => string[],
+) {
   return projects
     .filter((p) => category === "all" || p.categories.includes(category))
     .filter((p) =>
@@ -295,6 +303,7 @@ export function filterProjects(projects: Project[], { category, query }: Project
         ...p.categories.map((c) => PROJECT_CATEGORY_LABEL[c]),
         p.city,
         p.region,
+        ...(localized?.(p) ?? []),
       ),
     )
     .sort((a, b) => Number(b.region === region) - Number(a.region === region) || a.number - b.number);

@@ -280,10 +280,15 @@ export interface CropFilter {
 }
 
 /** Filters by category and search text, then lists crops known in the selected region first. */
-export function filterCrops(crops: Crop[], { category, query }: CropFilter, region?: string) {
+export function filterCrops(
+  crops: Crop[],
+  { category, query }: CropFilter,
+  region?: string,
+  localized?: (c: Crop) => string[],
+) {
   return crops
     .filter((c) => category === "all" || c.category === category)
-    .filter((c) => matchesQuery(query, c.fr, c.en, CROP_CATEGORY_LABEL[c.category]))
+    .filter((c) => matchesQuery(query, c.fr, c.en, CROP_CATEGORY_LABEL[c.category], ...(localized?.(c) ?? [])))
     .map((c, i) => ({ c, i, known: isKnownInRegion(c, region) }))
     .sort((a, b) => Number(b.known) - Number(a.known) || a.i - b.i)
     .map(({ c }) => c);

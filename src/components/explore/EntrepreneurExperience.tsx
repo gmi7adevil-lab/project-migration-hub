@@ -2,15 +2,8 @@ import { useState } from "react";
 import { Info, MapPin, MapPinned, Tag, type LucideIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import {
-  PROJECT_CATEGORIES,
-  PROJECT_CATEGORY_LABEL,
-  PROJECT_STATUS,
-  PROJECTS,
-  type Project,
-  type ProjectCategory,
-  type ProjectFilter,
-} from "@/lib/terrascope/projects";
+import { useI18n } from "@/lib/i18n";
+import { PROJECT_CATEGORIES, PROJECTS, type Project, type ProjectCategory, type ProjectFilter } from "@/lib/terrascope/projects";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { EmptyResults, FilterChips, Notice, SearchField } from "./controls";
@@ -28,6 +21,8 @@ type Props = {
 };
 
 export function EntrepreneurExperience({ projects, filter, onFilterChange, region, activeProjectId, onLocate }: Props) {
+  const { t, place } = useI18n();
+  const e = t.entrepreneur;
   const [openId, setOpenId] = useState<string | null>(null);
   const open = PROJECTS.find((p) => p.id === openId);
   const inRegion = region ? PROJECTS.filter((p) => p.region === region).length : 0;
@@ -35,35 +30,34 @@ export function EntrepreneurExperience({ projects, filter, onFilterChange, regio
   return (
     <section aria-labelledby="entrepreneur-heading" className="space-y-5">
       <div>
-        <p className="ts-eyebrow">Profil entrepreneur</p>
+        <p className="ts-eyebrow">{e.eyebrow}</p>
         <h2 id="entrepreneur-heading" className="mt-2 text-2xl font-light tracking-tight text-forest sm:text-3xl">
-          Projets et opportunités de <span className="font-medium text-primary">développement territorial</span>
+          {e.titleBefore} <span className="font-medium text-primary">{e.titleAccent}</span>
         </h2>
       </div>
 
       <Notice icon={<Info className="size-4" />}>
-        Ces 15 projets sont des <strong className="font-semibold text-forest">concepts illustratifs</strong>. Ils
-        n'existent pas et ne sont pas approuvés officiellement ; les localisations sont indicatives (ville ou
-        région, sans adresse).
-        {region && inRegion > 0 && ` ${inRegion} concept${inRegion > 1 ? "s" : ""} concerne${inRegion > 1 ? "nt" : ""} la région ${region} et figure${inRegion > 1 ? "nt" : ""} en premier.`}
+        {e.noticeBefore} <strong className="font-semibold text-forest">{e.noticeStrong}</strong>
+        {e.noticeAfter}
+        {region && inRegion > 0 && e.inRegion(inRegion, place(region))}
       </Notice>
 
       <div className="space-y-3">
         <SearchField
           value={filter.query}
           onChange={(query) => onFilterChange({ ...filter, query })}
-          placeholder="Rechercher par nom, catégorie ou lieu…"
-          label="Rechercher un projet"
+          placeholder={e.search}
+          label={e.searchLabel}
         />
         <FilterChips<ProjectCategory | "all">
-          label="Filtrer par catégorie"
+          label={t.common.filterByCategory}
           value={filter.category}
           onChange={(category) => onFilterChange({ ...filter, category })}
           options={[
-            { value: "all", label: "Tous", count: PROJECTS.length },
+            { value: "all", label: e.all, count: PROJECTS.length },
             ...PROJECT_CATEGORIES.map((c) => ({
               value: c,
-              label: PROJECT_CATEGORY_LABEL[c],
+              label: t.projectCategory[c],
               count: PROJECTS.filter((p) => p.categories.includes(c)).length,
             })),
           ]}
@@ -71,7 +65,7 @@ export function EntrepreneurExperience({ projects, filter, onFilterChange, regio
       </div>
 
       <p className="text-xs text-forest/50" aria-live="polite">
-        {projects.length} concept{projects.length > 1 ? "s" : ""} affiché{projects.length > 1 ? "s" : ""} sur la carte
+        {e.shown(projects.length)}
       </p>
 
       {projects.length === 0 && <EmptyResults onReset={() => onFilterChange({ category: "all", query: "" })} />}
@@ -118,6 +112,8 @@ function ProjectCard({
   onDetails: () => void;
   onLocate: () => void;
 }) {
+  const { t, project, place } = useI18n();
+  const text = project(p);
   const Icon: LucideIcon = PROJECT_ICONS[p.icon];
   return (
     <article className={cn("ts-card p-4 transition-shadow duration-300", active && "is-active")}>
@@ -127,23 +123,25 @@ function ProjectCard({
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="font-mono text-[11px] text-forest/40">#{String(p.number).padStart(2, "0")}</span>
-            <span className="ts-tag">{p.categoryLabel}</span>
-            {inRegion && <span className="ts-tag is-primary">Dans votre région</span>}
+            <span className="font-mono text-[11px] text-forest/40" dir="ltr">
+              #{String(p.number).padStart(2, "0")}
+            </span>
+            <span className="ts-tag">{text.categoryLabel}</span>
+            {inRegion && <span className="ts-tag is-primary">{t.entrepreneur.inYourRegion}</span>}
           </div>
-          <h3 className="mt-1.5 font-semibold tracking-tight text-forest">{p.title}</h3>
-          <p className="mt-1 text-sm leading-relaxed text-forest/65">{p.description}</p>
+          <h3 className="mt-1.5 font-semibold tracking-tight text-forest">{text.title}</h3>
+          <p className="mt-1 text-sm leading-relaxed text-forest/65">{text.description}</p>
           <p className="mt-2 flex items-center gap-1.5 text-xs text-forest/55">
             <MapPin aria-hidden="true" className="size-3.5 text-primary" />
-            {p.city} · {p.region}
+            {place(p.city)} · {place(p.region)}
           </p>
           <div className="mt-3.5 flex flex-wrap gap-2">
             <Button type="button" size="sm" variant="paper" onClick={onDetails}>
-              Détails du projet
+              {t.entrepreneur.details}
             </Button>
             <Button type="button" size="sm" variant="soft" onClick={onLocate} aria-pressed={active}>
               <MapPinned />
-              Voir sur la carte
+              {t.entrepreneur.showOnMap}
             </Button>
           </div>
         </div>
@@ -153,26 +151,31 @@ function ProjectCard({
 }
 
 function ProjectDialog({ project: p, onLocate }: { project: Project; onLocate: () => void }) {
+  const { t, project, place, dir } = useI18n();
+  const e = t.entrepreneur;
+  const text = project(p);
   const Icon = PROJECT_ICONS[p.icon];
   return (
-    <DialogContent className="ts-dialog">
-      <DialogHeader className="text-left">
+    <DialogContent className="ts-dialog" dir={dir}>
+      <DialogHeader className="text-start">
         <span className="ts-icon-tile size-12">
           <Icon className="size-6" strokeWidth={1.6} />
         </span>
-        <p className="ts-eyebrow pt-3">Concept #{String(p.number).padStart(2, "0")}</p>
-        <DialogTitle className="text-2xl font-medium tracking-tight text-forest">{p.title}</DialogTitle>
-        <DialogDescription className="text-sm leading-relaxed text-forest/70">{p.description}</DialogDescription>
+        <p className="ts-eyebrow pt-3">
+          {e.concept} <span dir="ltr">#{String(p.number).padStart(2, "0")}</span>
+        </p>
+        <DialogTitle className="text-2xl font-medium tracking-tight text-forest">{text.title}</DialogTitle>
+        <DialogDescription className="text-sm leading-relaxed text-forest/70">{text.description}</DialogDescription>
       </DialogHeader>
       <dl className="grid gap-3 sm:grid-cols-2">
-        <Fact icon={<Tag className="size-4" />} label="Catégorie" value={p.categoryLabel} />
-        <Fact icon={<MapPin className="size-4" />} label="Localisation suggérée" value={`${p.city} · ${p.region}`} />
-        <Fact icon={<Info className="size-4" />} label="Statut" value={PROJECT_STATUS} wide />
+        <Fact icon={<Tag className="size-4" />} label={e.category} value={text.categoryLabel} />
+        <Fact icon={<MapPin className="size-4" />} label={e.suggestedLocation} value={`${place(p.city)} · ${place(p.region)}`} />
+        <Fact icon={<Info className="size-4" />} label={e.status} value={t.projectStatus} wide />
       </dl>
       <div>
-        <p className="text-[11px] font-semibold tracking-wide text-forest/50 uppercase">Éléments envisagés</p>
+        <p className="text-[11px] font-semibold tracking-wide text-forest/50 uppercase">{e.plannedElements}</p>
         <ul className="mt-2 flex flex-wrap gap-1.5">
-          {p.highlights.map((h) => (
+          {text.highlights.map((h) => (
             <li key={h} className="ts-tag">
               {h}
             </li>
@@ -181,7 +184,7 @@ function ProjectDialog({ project: p, onLocate }: { project: Project; onLocate: (
       </div>
       <Button type="button" variant="hero" size="lg" className="justify-self-start" onClick={onLocate}>
         <MapPinned className="relative" />
-        <span className="relative">Voir sur la carte</span>
+        <span className="relative">{e.showOnMap}</span>
       </Button>
     </DialogContent>
   );
