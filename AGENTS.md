@@ -28,3 +28,13 @@ use the editor.
   own key and store it in Secrets.
 - **Secrets.** Lovable manages them. Do not put secret values in the repo.
 <!-- LOVABLE:END -->
+
+## Project rules
+- Large media (videos, logos) live as lovable-assets pointers in src/assets/*.asset.json, never as binaries in public/ — repo has a 10 MB per-file limit.
+- Shared site chrome (nav) lives in src/components/site and is rendered per route, so placeholder pages reuse it without a root layout change.
+- Explore map uses plain Leaflet imported dynamically inside useEffect (no react-leaflet) because Leaflet touches window at import and would break SSR; Leaflet CSS overrides stay outside @layer since leaflet.css is unlayered.
+- Links into /explore go through components/site/ExploreLink so every entry point shares the same white reveal transition.
+- Explore state (territory selection, profile, project filters, active project) lives in ExploreView and flows into ExploreMap as props, so map markers and lists never drift apart.
+- Explore reference data (regions, crops, sample projects, site/contact links) lives in src/lib/terrascope as plain typed modules; region names must match the GeoJSON exactly, which src/test/terrascope-data.test.ts enforces.
+- Leaflet boundary/marker colors come from CSS classes (ts-boundary, ts-marker, ts-popup) rather than Leaflet style options, so the map follows the design tokens.
+- Shared footer (components/site/SiteFooter) is rendered per route, like SiteNav.
