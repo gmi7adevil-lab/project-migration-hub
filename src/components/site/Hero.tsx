@@ -111,6 +111,17 @@ export function Hero({ nextSectionId }: { nextSectionId?: string }) {
         style={reduce ? {} : { x: tx, y: ty }}
         className="relative mx-auto flex w-full max-w-6xl flex-col items-center px-6 pt-20 text-center"
       >
+        <motion.p
+          initial={reduce ? false : { opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.9, delay: 0.6, ease: EASE }}
+          dir="ltr"
+          className="mb-8 inline-flex items-center gap-3 font-mono text-[11px] tracking-[0.35em] text-accent uppercase sm:text-xs"
+        >
+          <span className="h-px w-8 bg-accent/60" />
+          Observe · Analyze · Act
+          <span className="h-px w-8 bg-accent/60" />
+        </motion.p>
 
         <h1 key={lang} className="text-glow text-[2.6rem] leading-[1.02] font-light tracking-[-0.035em] text-ivory sm:text-6xl md:text-7xl lg:text-[5.6rem]">
           {headlineWords.map((words, i) => (
